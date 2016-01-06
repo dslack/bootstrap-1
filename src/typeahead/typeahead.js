@@ -48,6 +48,8 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
       isEditable = newVal !== false;
     }); 
 
+    var showDropdownSelect = angular.isDefined(attrs.showDropdownSelect) ? originalScope.$eval(attrs.showDropdownSelect) : false;
+
     //binding to a variable that indicates if matches are being retrieved asynchronously
     var isLoadingSetter = $parse(attrs.typeaheadLoading).assign || angular.noop;
 
@@ -166,6 +168,20 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
     if (angular.isDefined(attrs.typeaheadPopupTemplateUrl)) {
       popUpEl.attr('popup-template-url', attrs.typeaheadPopupTemplateUrl);
     }
+
+    var dropdownEl;
+    if (showDropdownSelect) {
+      dropdownEl = angular.element('<div uib-typeahead-dropdown></div>');
+
+      dropdownEl.attr({
+        matches: 'matches',
+        "show-all":'showAllMatches()'
+      });
+    }
+
+    scope.showAllMatches = function(){
+      modelCtrl.$setViewValue("");
+    };
 
     var resetHint = function() {
       if (showHint) {
@@ -436,7 +452,9 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
     var dismissClickHandler = function(evt) {
       // Issue #3973
       // Firefox treats right click as a click on document
-      if (element[0] !== evt.target && evt.which !== 3 && scope.matches.length !== 0) {
+      // if dropdown is enabled, this shouldn't close here either...
+      var checkNextTarget = showDropdownSelect ? element.next()[0] !== evt.target : true;
+      if (element[0] !== evt.target && evt.which !== 3 && scope.matches.length !== 0 && checkNextTarget) {
         resetMatches();
         if (!$rootScope.$$phase) {
           scope.$digest();
@@ -474,6 +492,10 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
       element.after($popup);
     }
 
+    if (showDropdownSelect && dropdownEl) {
+      element.after($compile(dropdownEl)(scope));
+    }
+
     this.init = function(_modelCtrl, _ngModelOptions) {
       modelCtrl = _modelCtrl;
       ngModelOptions = _ngModelOptions;
@@ -485,7 +507,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
       modelCtrl.$parsers.unshift(function(inputValue) {
         hasFocus = true;
 
-        if (minLength === 0 || inputValue && inputValue.length >= minLength) {
+        if (minLength === 0 || inputValue && inputValue.length >= minLength || showDropdownSelect) {
           if (waitTime > 0) {
             cancelPreviousTimeout();
             scheduleSearchWithTimeout(inputValue);
@@ -546,6 +568,30 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
       require: ['ngModel', '^?ngModelOptions', 'uibTypeahead'],
       link: function(originalScope, element, attrs, ctrls) {
         ctrls[2].init(ctrls[0], ctrls[1]);
+      }
+    };
+  })
+ .directive('uibTypeaheadDropdown', function() {
+    return {
+      scope: {
+        matches:"=",
+        showAll:"&"
+      },
+      replace: true,
+      template:'<i ng-click="showAllWrapper()" style="position: relative;left: 96%;top: -23px;" class="glyphicon {{dropdownClickedClass}}" ng-click=""></i>',
+      link: function(scope, element, attrs, ctrls) {
+        scope.dropdownClickedClass = "glyphicon-chevron-down";
+        scope.showAllWrapper = function() {
+          scope.dropdownClickedClass = "glyphicon-chevron-up";
+          scope.showAll();
+        };
+        scope.$watch('matches', function(matches){
+          if (!matches || matches.length === 0) {
+            scope.dropdownClickedClass = "glyphicon-chevron-down";
+          } else {
+            scope.dropdownClickedClass = "glyphicon-chevron-up";
+          }
+        });
       }
     };
   })
