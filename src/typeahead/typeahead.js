@@ -49,6 +49,8 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
     }); 
 
     var showDropdownSelect = angular.isDefined(attrs.showDropdownSelect) ? originalScope.$eval(attrs.showDropdownSelect) : false;
+    var dropdownArrowUp = angular.isDefined(attrs.dropdownArrowUp) ? attrs.dropdownArrowUp : 'glyphicon glyphicon-chevron-up';
+    var dropdownArrowDown = angular.isDefined(attrs.dropdownArrowDown) ? attrs.dropdownArrowDown : 'glyphicon glyphicon-chevron-down';
 
     //binding to a variable that indicates if matches are being retrieved asynchronously
     var isLoadingSetter = $parse(attrs.typeaheadLoading).assign || angular.noop;
@@ -175,7 +177,9 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
 
       dropdownEl.attr({
         matches: 'matches',
-        "show-all":'showAllMatches()'
+        "show-all":'showAllMatches()',
+        "arrow-up": dropdownArrowUp,
+        "arrow-down":dropdownArrowDown
       });
     }
 
@@ -572,24 +576,27 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
     };
   })
  .directive('uibTypeaheadDropdown', function() {
+  var style = "position: relative; top: -23px; width: 100%; display: block; text-align: right;";
     return {
       scope: {
         matches:"=",
-        showAll:"&"
+        showAll:"&",
+        arrowUp:"@",
+        arrowDown: "@"
       },
       replace: true,
-      template:'<i ng-click="showAllWrapper()" style="position: relative;left: 96%;top: -23px;" class="glyphicon {{dropdownClickedClass}}" ng-click=""></i>',
+      template:'<i ng-click="showAllWrapper()" style="'+style+'" class="uib-typeahead-dropdown {{dropdownClickedClass}}" ng-click=""></i>',
       link: function(scope, element, attrs, ctrls) {
-        scope.dropdownClickedClass = "glyphicon-chevron-down";
+        scope.dropdownClickedClass = scope.arrowDown;
         scope.showAllWrapper = function() {
-          scope.dropdownClickedClass = "glyphicon-chevron-up";
+          scope.dropdownClickedClass = scope.arrowUp;
           scope.showAll();
         };
         scope.$watch('matches', function(matches){
           if (!matches || matches.length === 0) {
-            scope.dropdownClickedClass = "glyphicon-chevron-down";
+            scope.dropdownClickedClass = scope.arrowDown;
           } else {
-            scope.dropdownClickedClass = "glyphicon-chevron-up";
+            scope.dropdownClickedClass = scope.arrowUp;
           }
         });
       }
