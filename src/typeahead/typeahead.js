@@ -183,8 +183,10 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
       });
     }
 
+    //Causes multiple Parse calls, but will work for now.  
     scope.showAllMatches = function(){
       modelCtrl.$setViewValue("");
+      modelCtrl.$$parseAndValidate();
     };
 
     var resetHint = function() {
@@ -576,7 +578,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
     };
   })
  .directive('uibTypeaheadDropdown', function() {
-  var style = "position: relative; top: -23px; width: 100%; display: block; text-align: right;";
+  var style = "position: relative; top: -23px; left: 99%;";
     return {
       scope: {
         matches:"=",
