@@ -577,8 +577,8 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
       }
     };
   })
- .directive('uibTypeaheadDropdown', function() {
-  var style = "position: relative; top: -23px; left: 99%;";
+  .directive('uibTypeaheadDropdown', function($timeout) {
+  var style = "position: relative; top: -23px;";// left: 99%;";
     return {
       scope: {
         matches:"=",
@@ -589,6 +589,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
       replace: true,
       template:'<i ng-click="showAllWrapper()" style="'+style+'" class="uib-typeahead-dropdown {{dropdownClickedClass}}" ng-click=""></i>',
       link: function(scope, element, attrs, ctrls) {
+
         scope.dropdownClickedClass = scope.arrowDown;
         scope.showAllWrapper = function() {
           scope.dropdownClickedClass = scope.arrowUp;
@@ -601,8 +602,26 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
             scope.dropdownClickedClass = scope.arrowUp;
           }
         });
+        $timeout(function() { adjustStyle(element);}, 0);
       }
     };
+
+    function adjustStyle(element){
+      var input = prev(element[0]);
+      element[0].style.left = input.offsetWidth-17+'px';
+    }
+
+    function prev(element) {
+       if (element.previousElementSibling) {
+         return element.previousElementSibling;
+       }
+       // IE8 doesn't have previousElementSibling
+       var elm = element.previousSibling;
+       while (elm !== null && elm.nodeType !== 1) {
+         elm = elm.previousSibling;
+       }
+       return elm;
+    }    
   })
 
   .directive('uibTypeaheadPopup', ['$$debounce', function($$debounce) {
