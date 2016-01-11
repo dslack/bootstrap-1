@@ -64,6 +64,8 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
     //binding to a variable that indicates if there were no results after the query is completed
     var isNoResultsSetter = $parse(attrs.typeaheadNoResults).assign || angular.noop;
 
+    var resultsSetter = $parse(attrs.typeaheadResults).assign || angular.noop;
+
     var inputFormatter = attrs.typeaheadInputFormatter ? $parse(attrs.typeaheadInputFormatter) : undefined;
 
     var appendToBody = attrs.typeaheadAppendToBody ? originalScope.$eval(attrs.typeaheadAppendToBody) : false;
@@ -200,6 +202,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
       scope.activeIdx = -1;
       element.attr('aria-expanded', false);
       resetHint();
+      resultsSetter(originalScope, []);
     };
 
     var getMatchId = function(index) {
@@ -233,6 +236,9 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
         //but we are interested only in responses that correspond to the current view value
         var onCurrentRequest = inputValue === modelCtrl.$viewValue;
         if (onCurrentRequest && hasFocus) {
+
+          resultsSetter(originalScope, matches);
+
           if (matches && matches.length > 0) {
             scope.activeIdx = focusFirst ? 0 : -1;
             isNoResultsSetter(originalScope, false);
