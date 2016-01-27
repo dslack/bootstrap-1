@@ -51,6 +51,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
     var showDropdownSelect = angular.isDefined(attrs.showDropdownSelect) ? originalScope.$eval(attrs.showDropdownSelect) : false;
     var dropdownArrowUp = angular.isDefined(attrs.dropdownArrowUp) ? attrs.dropdownArrowUp : 'glyphicon glyphicon-chevron-up';
     var dropdownArrowDown = angular.isDefined(attrs.dropdownArrowDown) ? attrs.dropdownArrowDown : 'glyphicon glyphicon-chevron-down';
+    var dropdownArrowNudge = angular.isDefined(attrs.dropdownArrowNudge) ? attrs.dropdownArrowNudge : 20;
 
     //binding to a variable that indicates if matches are being retrieved asynchronously
     var isLoadingSetter = $parse(attrs.typeaheadLoading).assign || angular.noop;
@@ -181,9 +182,20 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
         matches: 'matches',
         "show-all":'showAllMatches()',
         "arrow-up": dropdownArrowUp,
-        "arrow-down":dropdownArrowDown
+        "arrow-down":dropdownArrowDown,
+        "parent-dimensions": "getDimensions()"
+        
       });
+      if (dropdownArrowNudge) {
+        dropdownEl.attr({
+          "arrow-nudge":dropdownArrowNudge
+        });
+      }
     }
+
+    scope.getDimensions = function(){
+      return $position.offset(element);
+    };
 
     //Causes multiple Parse calls, but will work for now.  
     scope.showAllMatches = function(){
@@ -505,7 +517,8 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
     }
 
     if (showDropdownSelect && dropdownEl) {
-      element.after($compile(dropdownEl)(scope));
+      $document.find('body').append($compile(dropdownEl)(scope));
+      //element.after($compile(dropdownEl)(scope));
     }
 
     this.init = function(_modelCtrl, _ngModelOptions) {
@@ -584,17 +597,21 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
     };
   })
   .directive('uibTypeaheadDropdown', function($timeout) {
-  var style = "position: relative; top: -23px;";// left: 99%;";
     return {
       scope: {
         matches:"=",
         showAll:"&",
         arrowUp:"@",
-        arrowDown: "@"
+        arrowDown: "@",
+        arrowNudge: "=",
+        parentDimensions: "&"
       },
       replace: true,
-      template:'<i ng-click="showAllWrapper()" style="'+style+'" class="uib-typeahead-dropdown {{dropdownClickedClass}}" ng-click=""></i>',
+      template:'<i ng-click="showAllWrapper()"  class="uib-typeahead-dropdown {{dropdownClickedClass}}" ng-click=""></i>',
       link: function(scope, element, attrs, ctrls) {
+
+        var localArrowStyle = {};
+        localArrowStyle.position = "absolute";
 
         scope.dropdownClickedClass = scope.arrowDown;
         scope.showAllWrapper = function() {
@@ -608,13 +625,18 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
             scope.dropdownClickedClass = scope.arrowUp;
           }
         });
-        $timeout(function() { adjustStyle(element);}, 0);
+        $timeout(function() { 
+          var positions = scope.parentDimensions();
+          localArrowStyle.top = positions.top + positions.height/3+"px";
+          localArrowStyle.left = positions.left+positions.width - scope.arrowNudge+"px";
+          adjustStyle(element, localArrowStyle);
+        }, 0);
       }
     };
 
-    function adjustStyle(element){
-      var input = prev(element[0]);
-      element[0].style.left = input.offsetWidth-17+'px';
+    function adjustStyle(element, arrowStyle){
+
+        element.css(arrowStyle);
     }
 
     function prev(element) {
